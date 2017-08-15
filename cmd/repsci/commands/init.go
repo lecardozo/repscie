@@ -18,10 +18,43 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package main
+package commands
 
-import "github.com/lecardozo/repsci/cmd"
+import (
+    "fmt"
+    "os"
+    "path"
+    "path/filepath"
+    "log"
+    "github.com/spf13/cobra"
+)
 
-func main() {
-	cmd.Execute()
+var initCmd = &cobra.Command{
+    Use:   "init",
+    Short: "Initialize project",
+    Long: `This command initializes your repsci project structure`,
+    Run: initProject,
+}
+
+func initProject(cmd *cobra.Command, args []string) {
+    dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+    if err != nil {
+            log.Fatal(err)
+    }
+    if args[0] == "." {
+        os.Mkdir(path.Join(dir, "data"), os.ModePerm)
+        fmt.Printf("Initializing project at %s\n", dir)
+    } else if path.IsAbs(args[0]) {
+        os.MkdirAll(path.Join(args[0], "data"), os.ModePerm)
+        fmt.Printf("Initializing project at %s\n", args[0])
+    } else {
+        os.MkdirAll(path.Join(dir, args[0], "data"), os.ModePerm)
+        fmt.Printf("Initializing project at %s\n",
+                           path.Join(dir, args[0]))
+    }
+}
+
+
+func init() {
+    RootCmd.AddCommand(initCmd)
 }

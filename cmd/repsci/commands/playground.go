@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package cmd
+package commands
 
 import (
     "context"
@@ -84,19 +84,7 @@ func startPlayground(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-
-    RootCmd.AddCommand(playgroundCmd)
     playgroundCmd.AddCommand(rstudioCmd)
     playgroundCmd.AddCommand(ipythonCmd)
-
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// playgroundCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// playgroundCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+    RootCmd.AddCommand(playgroundCmd)
 }
