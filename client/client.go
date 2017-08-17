@@ -1,8 +1,11 @@
 package client
 
 import (
+    "os"
     "net/http"
-    "github.com/lecardozo/repsci/helper"
+    "encoding/json"
+    "github.com/lecardozo/repsci/api/environment"
+    "github.com/lecardozo/repsci/api/project"
     "strconv"
 )
 
@@ -14,9 +17,22 @@ const Version = "0.1"
 
 // Client can create smite session objects and interact with the smite API
 type RSClient struct {
-    Host string
-    Port int
-    http.Client
+    host string
+    client *http.Client
+}
+
+func NewRSClient(host string) (*RSClient, error) {
+    if host == nil {
+        host = "http://localhost:4321"
+    }
+
+    return &RSClient{
+                host: host,
+                client: &http.Client{
+                    Timeout: time.Second * 10
+                }
+
+    }, nil
 }
 
 func (c RSClient) GetProjects() (string, error) {
@@ -43,10 +59,17 @@ func (c RSClient) ListEnvs() (string, error) {
     return url, nil
 }
 
-func (c RSClient) CreateEnv() (string, error) {
+
+func (c RSClient) CreateEnv(configfile string) (string, error) {
+    if _, err := os.Stat(configfile); os.IsNotExist(err) {
+        log.Fatalf("File %s does not exist", configfile)
+    }
+
+    envconf := environment.ConfigFromFile(configfile)
     const path = "/env"
     const method = "POST"
     url := helper.Cat(c.Host, ":", strconv.Itoa(c.Port), path)
+
     //resp, err := c.Get(url)
     return url, nil
 }
