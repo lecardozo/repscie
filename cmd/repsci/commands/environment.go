@@ -55,14 +55,11 @@ var updateenvCmd = &cobra.Command{
     Run: updateEnv,
 }
 
-var (
-    host
-    configfile
-) string
+var host, configfile string
 
 
 func init() {
-    RootCmd.PersistentFlags.StringVarP(&host, "host", "H", "http://localhost:4321",
+    RootCmd.PersistentFlags().StringVarP(&host, "host", "H", "http://localhost:4321",
                                               "Daemon socket to connect to")
     createenvCmd.Flags().StringVarP(&configfile, "config", "c", "rsenv.yml",
                                                  `Environment configuration file
@@ -77,7 +74,7 @@ func init() {
 }
 
 func createEnv(cmd *cobra.Command, args []string) {
-    rsclient, _ := NewRSClient(host)
+    rsclient, _ := client.NewRSClient(host)
     rsclient.CreateEnv(configfile)
 }
 

@@ -28,6 +28,7 @@ import (
     "log"
     "github.com/spf13/cobra"
     "github.com/lecardozo/repsci/client"
+    "github.com/lecardozo/repsci/api/project"
 )
 
 var ProjectCmd = &cobra.Command{
@@ -51,39 +52,33 @@ var listCmd = &cobra.Command{
 }
 
 func initProject(cmd *cobra.Command, args []string) {
-    dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+    dir, err := filepath.Abs(filepath.Dir(args[0]))
     if err != nil {
             log.Fatal(err)
     }
-    if args[0] == "." {
-        os.Mkdir(path.Join(dir, "data"), os.ModePerm)
-        fmt.Printf("Initializing project at %s\n", dir)
-    } else if path.IsAbs(args[0]) {
-        os.MkdirAll(path.Join(args[0], "data"), os.ModePerm)
-        fmt.Printf("Initializing project at %s\n", args[0])
+
+    var name string
+    if (args[0] == "") {
+        fmt.Fprintln(os.Stderr, "Error: Must provide project location")
+    } else if (args[0] == "."){
+        name = path.Base(dir)
     } else {
-        os.MkdirAll(path.Join(dir, args[0], "data"), os.ModePerm)
-        fmt.Printf("Initializing project at %s\n",
-                           path.Join(dir, args[0]))
+        name = args[0]
+        dir = path.Join(dir, name)
     }
+
+    client, err := client.NewRSClient("")
+    config := project.DefaultConfig(name, dir)
+    client.InitProject(config)
 }
 
 func listProjects(cmd *cobra.Command, args []string) {
-
-    client := client.RSClient{
-        Host: "localhost",
-        Port: 4321,
-    }
-
-    resp, err := client.GetProjects()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println(resp)
+    fmt.Printf("All projects")
 }
 
+
 func init() {
+    initCmd.Flags().StringVarP()
     ProjectCmd.AddCommand(initCmd)
     ProjectCmd.AddCommand(listCmd)
     RootCmd.AddCommand(ProjectCmd)
