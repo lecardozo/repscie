@@ -21,11 +21,10 @@
 package commands
 
 import (
-    //"context"
 	"fmt"
-    //"github.com/docker/docker/api/types"
-    //"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
+
+    "github.com/lecardozo/repsci/client"
 )
 
 // playgroundCmd represents the playground command
@@ -56,8 +55,30 @@ var updateenvCmd = &cobra.Command{
     Run: updateEnv,
 }
 
+var (
+    host
+    configfile
+) string
+
+
+func init() {
+    RootCmd.PersistentFlags.StringVarP(&host, "host", "H", "http://localhost:4321",
+                                              "Daemon socket to connect to")
+    createenvCmd.Flags().StringVarP(&configfile, "config", "c", "rsenv.yml",
+                                                 `Environment configuration file
+                                                 (default is ./rsenv.yml)`)
+    updateenvCmd.Flags().StringVarP(&configfile, "config", "c", "rsenv.yml",
+                                                 `Environment configuration file
+                                                 (default is ./rsenv.yml)`)
+    EnvironmentCmd.AddCommand(createenvCmd)
+    EnvironmentCmd.AddCommand(startenvCmd)
+    EnvironmentCmd.AddCommand(updateenvCmd)
+    RootCmd.AddCommand(EnvironmentCmd)
+}
+
 func createEnv(cmd *cobra.Command, args []string) {
-    fmt.Println("New environment has been created")
+    rsclient, _ := NewRSClient(host)
+    rsclient.CreateEnv(configfile)
 }
 
 func startEnv(cmd *cobra.Command, args []string) {
@@ -66,11 +87,4 @@ func startEnv(cmd *cobra.Command, args []string) {
 
 func updateEnv(cmd *cobra.Command, args []string) {
     fmt.Println("Environment has been updated")
-}
-
-func init() {
-    EnvironmentCmd.AddCommand(createenvCmd)
-    EnvironmentCmd.AddCommand(startenvCmd)
-    EnvironmentCmd.AddCommand(updateenvCmd)
-    RootCmd.AddCommand(EnvironmentCmd)
 }
