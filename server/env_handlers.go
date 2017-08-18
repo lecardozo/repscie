@@ -1,14 +1,15 @@
 package main
 
 import (
-    "fmt"
+    _"fmt"
     "log"
     "net/http"
     "encoding/json"
     _"io/ioutil"
     "io"
     "bufio"
-    "strings"
+    _"os"
+    _"strings"
     "github.com/fsouza/go-dockerclient"
 
     "github.com/lecardozo/repsci/api/environment"
@@ -30,36 +31,25 @@ func createEnv(w http.ResponseWriter, r *http.Request) {
 
     read, write := io.Pipe()
     opts := docker.PullImageOptions{
-        Repository: "rocker/r-ver",
+        Repository: "postgres",
         Tag: "latest",
         OutputStream: write,
-        RawJSONStream: false,
+        RawJSONStream: true,
     }
 
-    go client.PullImage(opts, docker.AuthConfiguration{})
-    go func(reader io.Reader) {
-        scanner := bufio.NewScanner(reader)
-        for scanner.Scan() {
-            fmt.Printf("%s \n", scanner.Text())
-            if strings.Contains(scanner.Text(), "up to date") {
-                break
-            }
+    // start goroutine pulling image and writing to write
+    go func() {
+        defer write.Close()
+        err := client.PullImage(opts, docker.AuthConfiguration{})
+        if err != nil {
+            log.Fatal(err)
         }
-        fmt.Printf("%s \n", "Acabooou")
+    }()
 
-    }(read)
-    //imgs, err := client.ListImages(docker.ListImagesOptions{All: false})
-    //for _, img := range imgs {
-    //}
-//    env.Status = "CREATED"
-//
-//    js, err := json.Marshal(proj)
-//    if err != nil {
-//        http.Error(w, err.Error(), http.StatusInternalServerError)
-//        return
-//    }
-//
-//    w.Header().Set("Content-Type", "application/json")
-//    w.WriteHeader(http.StatusOK)
-//    w.Write(js)
+    scanner := bufio.NewScanner(read)
+    for scanner.Scan() {
+        w.Write([]byte(scanner.Text()))
+        w.(http.Flusher).Flush()
+    }
+    return 
 }

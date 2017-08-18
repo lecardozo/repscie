@@ -23,6 +23,8 @@ package commands
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+    _"bufio"
+    _"io"
 
     "github.com/lecardozo/repsci/client"
 )
@@ -74,7 +76,7 @@ func init() {
 
 func createEnv(cmd *cobra.Command, args []string) {
     rsclient, _ := client.NewRSClient(host)
-    rsclient.CreateEnv("R")
+    rsclient.CreateEnv("python")
 }
 
 func startEnv(cmd *cobra.Command, args []string) {

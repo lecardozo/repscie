@@ -4,10 +4,13 @@ import (
     "os"
     "net/http"
     "path"
-    "time"
+    _"time"
     "encoding/json"
     "bytes"
     "fmt"
+    "bufio"
+    _"io/ioutil"
+    _"log"
 
     "github.com/lecardozo/repsci/helper"
     "github.com/lecardozo/repsci/api/project"
@@ -34,7 +37,6 @@ func NewRSClient(host string) (*RSClient, error) {
     return &RSClient{
                 host,
                 &http.Client{
-                    Timeout: time.Second * 10,
                 },
     }, nil
 }
@@ -105,10 +107,11 @@ func (c RSClient) CreateEnv(lang string) (*environment.Environment, error) {
         return nil, err
     }
 
-    // Decode server response
-    err = json.NewDecoder(resp.Body).Decode(env)
-    if err != nil {
-        return nil, err
+    defer resp.Body.Close()
+    scanner := bufio.NewScanner(resp.Body)
+    for scanner.Scan() {
+        fmt.Println(scanner.Text())
+        os.Stdout.Write(scanner.Bytes())
     }
 
     return env, nil
