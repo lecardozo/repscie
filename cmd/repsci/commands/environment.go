@@ -27,7 +27,6 @@ import (
     "github.com/lecardozo/repsci/client"
 )
 
-// playgroundCmd represents the playground command
 var EnvironmentCmd = &cobra.Command{
 	Use:   "env",
 	Short: "Command to manage environments",
@@ -55,8 +54,8 @@ var updateenvCmd = &cobra.Command{
     Run: updateEnv,
 }
 
-var host, configfile string
 
+var host, configfile string
 
 func init() {
     RootCmd.PersistentFlags().StringVarP(&host, "host", "H", "http://localhost:4321",
@@ -75,7 +74,7 @@ func init() {
 
 func createEnv(cmd *cobra.Command, args []string) {
     rsclient, _ := client.NewRSClient(host)
-    rsclient.CreateEnv(configfile)
+    rsclient.CreateEnv("R")
 }
 
 func startEnv(cmd *cobra.Command, args []string) {

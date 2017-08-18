@@ -1,37 +1,30 @@
 package environment
 
 import (
-    "gopkg.in/yaml.v2"
-    "log"
-    "github.com/lecardozo/repsci/helper"
+    "strings"
 )
 
-type Config struct {
-    Deps struct {
-        System struct {
-            Pkgs []string
-        }
-        R struct {
-            Pkgs []string
-        }
-        Python struct {
-            Pkgs []string
-        }
-    }
-}
-
 type Environment struct {
-    Config Config
+    Lang string // python or r
+    Version string
     ImageID string
-    Status string
+    BaseImage string // image name
+    Status string // created, running, stopped
 }
 
-func ConfigFromFile(file string) Config{
-    config := helper.ReadConfigFile(file)
-    newConf := Config{}
-    err := yaml.Unmarshal([]byte(config), &newConf)
-    if err != nil {
-        log.Fatal("error")
+
+func DefaultEnv(lang string) *Environment {
+    lang = strings.ToLower(lang)
+    var image string
+    switch lang {
+        case "r":
+            image = "rocker/r-ver"
+        case "python" :
+            image = "jupyter/minimal-notebook"
     }
-    return newConf
+    return &Environment{lang,
+                        "latest",
+                        "",
+                        image,
+                        ""}
 }

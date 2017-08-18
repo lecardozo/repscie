@@ -19,11 +19,12 @@ type Config struct {
 type Backup struct {
     Freq string
     Provider string
+    Status string
 }
 
 type Project struct {
     ID string
-    Environment environment.Environment
+    Environment []environment.Environment
     Config Config
     Status string
 }
@@ -52,5 +53,5 @@ func ConfigFromFile(file string) *Config{
 }
 
 func DefaultConfig(name string, dir string) *Config {
-   return &Config{name, dir, Backup{"never", "none"}}
+   return &Config{name, dir, Backup{"never", "none", "disabled"}}
 }

@@ -78,7 +78,6 @@ func listProjects(cmd *cobra.Command, args []string) {
 
 
 func init() {
-    initCmd.Flags().StringVarP()
     ProjectCmd.AddCommand(initCmd)
     ProjectCmd.AddCommand(listCmd)
     RootCmd.AddCommand(ProjectCmd)
