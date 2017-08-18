@@ -4,7 +4,6 @@ import (
     "os"
     "net/http"
     "path"
-    "log"
     "time"
     "encoding/json"
     "bytes"
@@ -12,6 +11,7 @@ import (
 
     "github.com/lecardozo/repsci/helper"
     "github.com/lecardozo/repsci/api/project"
+    "github.com/lecardozo/repsci/api/environment"
 )
 
 const DefaultBaseURL = "http://localhost"
@@ -49,11 +49,11 @@ func (c RSClient) GetProjects() (string, error) {
 
 // This functions verifies if project already exists and, if not,
 // initializes.
-func (c *RSClient) InitProject(config *project.Config) (string, error) {
+func (c *RSClient) InitProject(config *project.Config) (*project.Project, error) {
     exists, err := project.ProjectExists(config.Location)
     if exists {
         fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-        return "", err
+        return nil, err
     }
 
     os.MkdirAll(path.Join(config.Location, ".repscie"), os.ModePerm)
@@ -69,46 +69,62 @@ func (c *RSClient) InitProject(config *project.Config) (string, error) {
     req.Header.Set("Content-Type", "application/json")
     resp, err := c.Do(req)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
     // Decode server response
     proj := project.Project{}
     err = json.NewDecoder(resp.Body).Decode(&proj)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
-    return proj.ID, nil
+    return &proj, nil
 }
 
 
-
-func (c RSClient) ListEnvs() (string, error) {
-    const path = "/envs"
-    const method = "GET"
-    url := helper.Cat(c.host, path)
-    //resp, err := c.Get(url)
-    return url, nil
-}
-
-
-func (c RSClient) CreateEnv(configfile string) (string, error) {
-    if _, err := os.Stat(configfile); os.IsNotExist(err) {
-        log.Fatalf("File %s does not exist", configfile)
+func (c RSClient) CreateEnv(lang string) (*environment.Environment, error) {
+    dir, err := os.Getwd()
+    exists, err := project.ProjectExists(dir)
+    if !exists {
+        fmt.Fprintf(os.Stderr, "Error: environment must be created inside project\n", )
+        return nil, err
     }
 
     const path = "/env"
     const method = "POST"
     url := helper.Cat(c.host, path)
 
-    //resp, err := c.Get(url)
-    return url, nil
+    env := environment.DefaultEnv(lang)
+
+    js, err := json.Marshal(env)
+    req , err := http.NewRequest(method, url, bytes.NewBuffer(js))
+    req.Header.Set("Content-Type", "application/json")
+    resp, err := c.Do(req)
+    if err != nil {
+        return nil, err
+    }
+
+    // Decode server response
+    err = json.NewDecoder(resp.Body).Decode(env)
+    if err != nil {
+        return nil, err
+    }
+
+    return env, nil
 }
 
 func (c RSClient) UpdateEnv(id string) (string, error) {
     const path = "/env"
     const method = "PUT"
+    url := helper.Cat(c.host, path)
+    //resp, err := c.Get(url)
+    return url, nil
+}
+
+func (c RSClient) ListEnvs() (string, error) {
+    const path = "/envs"
+    const method = "GET"
     url := helper.Cat(c.host, path)
     //resp, err := c.Get(url)
     return url, nil
