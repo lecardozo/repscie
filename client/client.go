@@ -4,14 +4,15 @@ import (
     "os"
     "net/http"
     "path"
-    _"time"
+    "time"
     "encoding/json"
     "bytes"
     "fmt"
     "bufio"
     _"io/ioutil"
-    _"log"
+    "log"
 
+    "github.com/cheggaaa/pb"
     "github.com/lecardozo/repsci/helper"
     "github.com/lecardozo/repsci/api/project"
     "github.com/lecardozo/repsci/api/environment"
@@ -37,6 +38,7 @@ func NewRSClient(host string) (*RSClient, error) {
     return &RSClient{
                 host,
                 &http.Client{
+                    Timeout: time.Second * 10000,
                 },
     }, nil
 }
@@ -101,19 +103,43 @@ func (c RSClient) CreateEnv(lang string) (*environment.Environment, error) {
 
     js, err := json.Marshal(env)
     req , err := http.NewRequest(method, url, bytes.NewBuffer(js))
-    req.Header.Set("Content-Type", "application/json")
     resp, err := c.Do(req)
     if err != nil {
+        log.Fatal(err)
         return nil, err
     }
 
     defer resp.Body.Close()
+
+    statusMap := make(map[string]interface{})
+    layersProg := make(map[string]*pb.ProgressBar)
+    uptodate := false
+
+    fmt.Println("Pulling image from registry...")
+    pool, err := pb.StartPool()
     scanner := bufio.NewScanner(resp.Body)
     for scanner.Scan() {
-        fmt.Println(scanner.Text())
-        os.Stdout.Write(scanner.Bytes())
+        json.Unmarshal(scanner.Bytes(), &statusMap)
+        id := statusMap["layer"].(string)
+        progress := statusMap["progress"].(float64)
+        if id == "none" {
+            uptodate = true
+            break
+        }
+        if _, ok := layersProg[id]; ok {
+            layersProg[id].Set(int(progress*100))
+        } else {
+            layersProg[id] = pb.New(100).Prefix(id+": ")
+            layersProg[id].ShowTimeLeft = false
+            layersProg[id].ShowCounters = false
+            pool.Add(layersProg[id])
+        }
     }
-
+    pool.Stop()
+    if uptodate {
+        fmt.Printf("\r%s          \n", "Image is up to date!")
+    }
+    fmt.Printf("Environment created! To start, run \n  $ repscie env start [envname]\n")
     return env, nil
 }
 

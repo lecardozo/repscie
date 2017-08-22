@@ -76,7 +76,7 @@ func init() {
 
 func createEnv(cmd *cobra.Command, args []string) {
     rsclient, _ := client.NewRSClient(host)
-    rsclient.CreateEnv("python")
+    rsclient.CreateEnv(args[0])
 }
 
 func startEnv(cmd *cobra.Command, args []string) {

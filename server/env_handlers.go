@@ -1,16 +1,19 @@
 package main
 
 import (
-    _"fmt"
+    "fmt"
     "log"
     "net/http"
+    "context"
     "encoding/json"
     _"io/ioutil"
-    "io"
+    _"io"
     "bufio"
     _"os"
-    _"strings"
-    "github.com/fsouza/go-dockerclient"
+    "strings"
+    _"strconv"
+    "github.com/docker/docker/client"
+    "github.com/docker/docker/api/types"
 
     "github.com/lecardozo/repsci/api/environment"
 )
@@ -23,33 +26,57 @@ func createEnv(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }
 
-	endpoint := "unix:///var/run/docker.sock"
-	client, err := docker.NewClient(endpoint)
+	cli, err := client.NewEnvClient()
     if err != nil {
 		panic(err)
     }
 
-    read, write := io.Pipe()
-    opts := docker.PullImageOptions{
-        Repository: "postgres",
-        Tag: "latest",
-        OutputStream: write,
-        RawJSONStream: true,
+    opts := types.ImagePullOptions{}
+    readc, err := cli.ImagePull(context.Background(), env.BaseImage, opts)
+    if err != nil {
+        panic(err)
+    }
+    defer readc.Close()
+
+    flusher, ok := w.(http.Flusher)
+    if !ok {
+      fmt.Println("expected http.ResponseWriter to be an http.Flusher")
     }
 
-    // start goroutine pulling image and writing to write
-    go func() {
-        defer write.Close()
-        err := client.PullImage(opts, docker.AuthConfiguration{})
-        if err != nil {
-            log.Fatal(err)
-        }
-    }()
+    statusMap := make(map[string]interface{})
+    layerProg := make(map[string]float64)
 
-    scanner := bufio.NewScanner(read)
+    scanner := bufio.NewScanner(readc)
     for scanner.Scan() {
-        w.Write([]byte(scanner.Text()))
-        w.(http.Flusher).Flush()
+        fmt.Println(scanner.Text())
+        json.Unmarshal(scanner.Bytes(), &statusMap)
+        status := statusMap["status"].(string)
+        switch {
+            case strings.Contains(status,"Image is up to date"):
+                fmt.Fprintf(w, "{\"layer\": \"%s\", \"progress\": %f}\n",
+                                    "none", 0.0)
+            case status == "Already exists":
+                //totLayers--
+            case status == "Pulling fs layer":
+                fmt.Fprintf(w, "{\"layer\": \"%s\", \"progress\": %f}\n",
+                                statusMap["id"].(string), 0.0)
+                layerProg[statusMap["id"].(string)] = 0.0
+            case status == "Waiting":
+                layerProg[statusMap["id"].(string)] = 0.0
+            case status == "Downloading":
+                progDet := statusMap["progressDetail"].(map[string]interface{})
+                cur := progDet["current"].(float64)
+                tot := progDet["total"].(float64)
+                layerProg[statusMap["id"].(string)] = cur
+                fmt.Fprintf(w, "{\"layer\": \"%s\", \"progress\": %f}\n",
+                             statusMap["id"].(string), cur/tot)
+
+            case status == "Verifying Checksum":
+            case status == "Download complete":
+            case status == "Extracting":
+            case status == "Pull complete":
+        }
+        flusher.Flush()
     }
-    return 
 }
+
