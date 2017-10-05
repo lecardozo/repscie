@@ -14,6 +14,8 @@ import (
     _"strconv"
     "github.com/docker/docker/client"
     "github.com/docker/docker/api/types"
+    "github.com/moby/moby/api/types/container"
+
 
     "github.com/lecardozo/repsci/api/environment"
 )
@@ -56,7 +58,6 @@ func createEnv(w http.ResponseWriter, r *http.Request) {
                 fmt.Fprintf(w, "{\"layer\": \"%s\", \"progress\": %f}\n",
                                     "none", 0.0)
             case status == "Already exists":
-                //totLayers--
             case status == "Pulling fs layer":
                 fmt.Fprintf(w, "{\"layer\": \"%s\", \"progress\": %f}\n",
                                 statusMap["id"].(string), 0.0)
@@ -77,6 +78,47 @@ func createEnv(w http.ResponseWriter, r *http.Request) {
             case status == "Pull complete":
         }
         flusher.Flush()
+    }
+    fmt.Fprint(w, )
+}
+
+func updateEnv(w http.ResponseWriter, r *http.Request) {
+    decoder := json.NewDecoder(r.Body)
+    var env environment.Environment
+    err := decoder.Decode(&env)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+	cli, err := client.NewEnvClient()
+    if err != nil {
+		panic(err)
+    }
+
+    cconf := container.Config{
+                 Hostname: "repscie",
+                 User: "root",
+                 AttachStdin: true,
+                 AttachStdout: true,
+                 AttachStderr: true,
+                 Tty: true,
+                 OpenStdin: true,
+                 Cmd:
+                 ArgsEscaped     bool
+                 Image           string
+                 Volumes         map[string]struct{}
+                 WorkingDir      string
+                 Entrypoint      strslice.StrSlice
+                 Shell           strslice.StrSlice
+    }
+
+    cid, err := cli.ContainerCreate(context.Background(),
+                                    cconf,
+                                    hostConfig *container.HostConfig,
+                                    networkingConfig *network.NetworkingConfig,
+                                    containerName string)
+    if err != nil {
+        panic(err)
     }
 }
 

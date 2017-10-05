@@ -21,6 +21,8 @@ func DefaultEnv(lang string) *Environment {
             image = "rocker/r-ver"
         case "python" :
             image = "jupyter/minimal-notebook"
+        default:
+            panic("Environments must be R or Python")
     }
     return &Environment{lang,
                         "latest",

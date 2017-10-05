@@ -12,9 +12,8 @@ func main() {
 	r.HandleFunc("/project/{id}", getProject).Methods("GET")
 
     r.HandleFunc("/env", createEnv).Methods("POST")
-	//r.HandleFunc("/env/{id}", getEnv).Methods("GET")
-	//r.HandleFunc("/env/{id}", updateEnv).Methods("PUT")
-	//r.HandleFunc("/env/{status}", setEnvStatus).Methods("POST")
+	r.HandleFunc("/env/{id}", updateEnv).Methods("POST")
+    //r.HandleFunc("/env/{id}", getEnv).Methods("GET")
 
     log.Fatal(http.ListenAndServe(":4321", r))
 }
