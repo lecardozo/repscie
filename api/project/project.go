@@ -5,8 +5,8 @@ import (
     "errors"
     "path"
     "gopkg.in/yaml.v2"
-    "github.com/lecardozo/repsci/helper"
-    "github.com/lecardozo/repsci/api/environment"
+    "github.com/lecardozo/repscie/helper"
+    "github.com/lecardozo/repscie/api/environment"
     "log"
 )
 
